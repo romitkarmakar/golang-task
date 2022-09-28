@@ -12,5 +12,9 @@ import (
 func main() {
 	routes.SetupRoutes()
 	fmt.Println("Starting Broadcasting Server")
-	http.ListenAndServe(":8000",nil)
+	err := http.ListenAndServe(":8000",nil)
+
+	if(err != nil){
+		fmt.Printf("\nError : %v",err)
+	}
 }

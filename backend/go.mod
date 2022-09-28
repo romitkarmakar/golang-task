@@ -1,3 +1,5 @@
-module "github.com/sswastik02/PublicRoom"
+module github.com/sswastik02/PublicRoom
 
 go 1.19
+
+require github.com/gorilla/websocket v1.5.0 // indirect
