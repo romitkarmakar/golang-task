@@ -4,19 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/sswastik02/PublicRoom/sockets"
 )
 
-func ServeWs(w http.ResponseWriter,r *http.Request) {
-	fmt.Println(r.Host)
-	// Print Host
+func ServeWs(pool *sockets.Pool,w http.ResponseWriter,r *http.Request) {
 
 	ws,err := sockets.Upgrader.Upgrade(w,r,nil)
 	// Upgrade TCP to Socket
 
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	sockets.Reader(ws)
+	member := &sockets.Member{ID: uuid.New(),Conn: ws,Pool: pool}
+
+	pool.Register <- member
+	member.Read()
 }
