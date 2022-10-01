@@ -1,7 +1,6 @@
 let backendUrl = process.env.REACT_APP_API_URL;
-let socket = new WebSocket("ws://" + backendUrl + "/ws");
 
-function connect(cb: (msg: string) => any) {
+function connect(cb: (msg: string) => any, socket:WebSocket) {
   console.log("Connection on domain: " + backendUrl);
 
   socket.onopen = () => {
@@ -22,7 +21,7 @@ function connect(cb: (msg: string) => any) {
   };
 }
 
-function send(msg: string) {
+function send(msg: string, socket:WebSocket) {
   console.log("Message Sending : ", msg);
   socket.send(msg);
 }
