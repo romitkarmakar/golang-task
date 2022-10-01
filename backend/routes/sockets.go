@@ -8,7 +8,9 @@ import (
 	"github.com/sswastik02/PublicRoom/sockets"
 )
 
-func ServeWs(pool *sockets.Pool,w http.ResponseWriter,r *http.Request) {
+func ServeWs(receiver bool)(func(pool *sockets.Pool, w http.ResponseWriter, r *http.Request)) {
+
+return func (pool *sockets.Pool,w http.ResponseWriter,r *http.Request) {
 
 	ws,err := sockets.Upgrader.Upgrade(w,r,nil)
 	// Upgrade TCP to Socket
@@ -18,8 +20,9 @@ func ServeWs(pool *sockets.Pool,w http.ResponseWriter,r *http.Request) {
 		return
 	}
 
-	member := &sockets.Member{ID: uuid.New(),Conn: ws,Pool: pool}
+	member := &sockets.Member{ID: uuid.New(),Conn: ws,Pool: pool,Receiver: receiver}
 
 	pool.Register <- member
 	member.Read()
+}
 }

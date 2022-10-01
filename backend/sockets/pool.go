@@ -1,15 +1,15 @@
 package sockets
 
-type MemberError struct {
+type MemberPrivate struct {
 	Member *Member
-	Error string
+	Desc string
 }
 
 type Pool struct {
 	Register chan *Member
 	Unregister chan *Member
-	Broadcast chan Message
-	Error chan MemberError
+	Broadcast chan MemberMessage
+	Private chan MemberPrivate
 	AssignName chan *Member
 	Members []*Member
 }
@@ -18,9 +18,9 @@ func CreatePool() *Pool {
 	return &Pool{
 		Register: make(chan *Member),
 		Unregister: make(chan *Member),
-		Broadcast: make(chan Message),
+		Broadcast: make(chan MemberMessage),
 		Members: make([]*Member, 0),
-		Error: make(chan MemberError),
+		Private: make(chan MemberPrivate),
 		AssignName: make(chan *Member),
 	}
 }

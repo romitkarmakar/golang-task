@@ -1,6 +1,7 @@
 package sockets
 
-type Message struct {
+type MemberMessage struct {
+	Member *Member `json:"member"`
 	Type int `json:"type"`
 	Body string `json:"body"`
 }

@@ -37,9 +37,16 @@ var Upgrader = websocket.Upgrader{
 // 	}
 // }
 
-func broadcast(pool *Pool,message *Message) {
+func broadcast(pool *Pool,message *MemberMessage) {
+	if message.Member.Receiver {
+		// if Member is a receiver, he cannot send messages
+		return
+	}
 	for _,member := range pool.Members {
-		member.Conn.WriteJSON(message.Body)
+		// if member is a receiver
+		if member.Receiver {
+			member.Conn.WriteJSON(message.Body)
+		}
 	}
 }
 
@@ -50,7 +57,7 @@ func (pool *Pool) Start() {
 		case member := <-pool.Register:
 			fmt.Printf("\nNew member joined: %s",member.ID)
 			// let other members know that new member has joined
-			broadcast(pool,&Message{Type: 1, Body: fmt.Sprintf("New Member Joined : %s",member.ID)})
+			// broadcast(pool,&Message{Type: 1, Body: fmt.Sprintf("New Member Joined : %s",member.ID)})
 			// then add to pool
 			pool.Members = append(pool.Members, member)
 			continue
@@ -59,19 +66,19 @@ func (pool *Pool) Start() {
 			fmt.Printf("\n Member left : %s",member.ID)
 			idx := slices.IndexFunc(pool.Members,func(m *Member) bool {return m.ID == member.ID})
 			slices.Delete(pool.Members,idx,idx)
-			broadcast(pool,&Message{Type: 1, Body: fmt.Sprintf("Member Left : %s",member.ID)})
+			// broadcast(pool,&Message{Type: 1, Body: fmt.Sprintf("Member Left : %s",member.ID)})
 			continue
 
 		case message := <-pool.Broadcast:
 			broadcast(pool,&message)
 			continue
 
-		case memberError := <-pool.Error:
-			memberError.Member.Conn.WriteJSON(
+		case memberPrivate := <-pool.Private:
+			memberPrivate.Member.Conn.WriteJSON(
 				struct {
-					Error string `json:"error"`
+					Desc string `json:"desc"`
 				} {
-					Error: memberError.Error,
+					Desc: memberPrivate.Desc,
 				},
 			)
 			continue

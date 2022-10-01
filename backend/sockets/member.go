@@ -10,6 +10,7 @@ import (
 
 type Member struct {
 	ID uuid.UUID
+	Receiver bool
 	Name string
 	Conn *websocket.Conn
 	Pool *Pool
@@ -35,22 +36,31 @@ func(member *Member) Read(){
 
 		if err != nil {
 			fmt.Printf("\nerror while reading message of %s",member.ID)
+			if err.Error() == "websocket: close 1001 (going away)"{
+				break
+			}
+			continue
+		}
+
+		if (member.Receiver) {
+			// Receivers cannot send message (no message to read for server)
+			fmt.Println("Receiver Cannot send message")
 			continue
 		}
 
 		setName := &setNameReqBody{}
 		messageReqBody := &messageReqBody{}
 
-		memberError := MemberError{
+		memberDesc := MemberPrivate{
 			Member: member,
-			Error: "",
+			Desc: "",
 		}
 
 		err = json.Unmarshal(p,&messageReqBody)
 
 		if err != nil {
-			memberError.Error = "Invalid Format"
-			member.Pool.Error <- memberError
+			memberDesc.Desc = "Invalid Format"
+			member.Pool.Private <- memberDesc
 			continue
 		
 		}
@@ -59,27 +69,28 @@ func(member *Member) Read(){
 			// look for name if not message
 			err = json.Unmarshal(p,&setName)
 			if err != nil || setName.Name == "" {
-				memberError.Error = "Invalid Format"
-				member.Pool.Error <- memberError
+				memberDesc.Desc = "Invalid Format"
+				member.Pool.Private <- memberDesc
 				continue
 			
 			}
 			member.Name = setName.Name
 			member.Pool.AssignName <- member
-			memberError.Error = "Name Changed to " + member.Name
-			member.Pool.Error <- memberError
+			memberDesc.Desc = "Name Changed to " + member.Name
+			member.Pool.Private <- memberDesc
 			continue
 		}
 
 		if member.Name == "" {
-			memberError.Error = "Set a name first"
-			member.Pool.Error <- memberError
+			memberDesc.Desc = "Set a name first"
+			member.Pool.Private <- memberDesc
 			continue
 		}
 
-		message := Message{
+		message := MemberMessage{
+			Member: member,
 			Type: messageType,
-			Body: member.Name + string(messageReqBody.Message),
+			Body: fmt.Sprintf("%s : %s",member.Name,messageReqBody.Message),
 		}
 
 		member.Pool.Broadcast <- message
